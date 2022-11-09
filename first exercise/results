@@ -1,0 +1,133 @@
+#!/bin/bash
+
+file=$1
+declare -a home_team	#declare arrays
+declare -a away_team
+declare -a home_score
+declare -a away_score
+declare -a teams
+declare -a unique_teams
+declare -a goals_received
+declare -a goals_scored
+declare -a points
+home_team=($(cat data | cut -d"-" -f1 ))					#cat provides data and cut provides the first field with '-' delim 
+home_score=($(cat data | cut -d"-" -f2 | cut -d":" -f2))	#cat provides data and cut provides the second field with '-' delim. this provides the second team and the first score so with one more cut we get the team only
+away_team=($(cat data | cut -d"-" -f2 | cut -d":" -f1))		#same as above 
+away_score=($(cat data | cut -d"-" -f3))					#same as the first one
+teams=("${home_team[@]}" "${away_team[@]}")					#array with all teams (includes duplicates)
+unique_teams=($(echo "${teams[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' ')) #echo provides the array, first tr converts the space between values into a new line, sort works only with new line, tr at the end re-converts to space
+matches=$(( wc -l $1 ) | awk '{print $1}') 
+for ((k=0 ; k < $matches ; k++))     #calculate points
+do
+	if [ "${home_score[k]}" -gt "${away_score[k]}" ]         	#if home wins
+	then
+		for (( j=0 ; j < ${#unique_teams[@]} ; j++ ))
+		do
+			if [ "${home_team[k]}" == "${unique_teams[j]}" ]
+			then
+				let points[j]=points[j]+3
+				let goals_received[j]=away_score[k]+goals_received[j]
+				let goals_scored[j]=home_score[k]+goals_scored[j]
+			fi
+			if [ "${away_team[k]}" == "${unique_teams[j]}" ]
+			then
+				let goals_received[j]=home_score[k]+goals_received[j]
+				let goals_scored[j]=away_score[k]+goals_scored[j]
+			fi
+		done
+	elif [ "${away_score[k]}" -gt "${home_score[k]}" ]			#if away wins
+	then
+		for (( j=0 ; j < ${#unique_teams[@]} ; j++ ))
+		do
+			if [ "${away_team[k]}" == "${unique_teams[j]}" ]
+			then
+				let points[j]=points[j]+3
+				let goals_received[j]=home_score[k]+goals_received[j]
+				let goals_scored[j]=away_score[k]+goals_scored[j]
+				break
+			fi
+			if [ "${home_team[k]}" == "${unique_teams[j]}" ]
+			then
+				let goals_received[j]=away_score[k]+goals_received[j]
+				let goals_scored[j]=home_score[k]+goals_scored[j]
+			fi
+		done
+	else 
+			for (( j=0 ; j < ${#unique_teams[@]} ; j++ ))		#draw
+		do
+			if [ "${home_team[k]}" == "${unique_teams[j]}" ]
+			then
+				let points[j]=points[j]+1
+				let goals_received[j]=away_score[k]+goals_received[j]
+				let goals_scored[j]=home_score[k]+goals_scored[j]
+			fi
+			if [ "${away_team[k]}" == "${unique_teams[j]}" ]
+			then
+				let points[j]=points[j]+1
+				let goals_received[j]=home_score[k]+goals_received[j]
+				let goals_scored[j]=away_score[k]+goals_scored[j]
+			fi
+		done
+	fi
+done
+
+
+
+for (( m=0 ; m < ${#unique_teams[@]} -1 ; m++ ))		#selection sort based on points
+do
+	max=$m
+	for (( n=m+1 ; n<${#unique_teams[@]} ; n++ ))
+	do
+		if [ ${points[n]} -gt ${points[max]} ]
+		then
+			max=$n
+		fi
+	done	
+	temp_p=${points[max]}
+	points[max]=${points[m]}
+	points[m]=$temp_p
+	temp_gs=${goals_scored[max]}
+	goals_scored[max]=${goals_scored[m]}
+	goals_scored[m]=$temp_gs
+	temp_gr=${goals_received[max]}
+	goals_received[max]=${goals_received[m]}
+	goals_received[m]=$temp_gr
+	temp_t=${unique_teams[max]}
+	unique_teams[max]=${unique_teams[m]}	
+	unique_teams[m]=$temp_t	
+done
+
+
+for (( m=0 ; m < ${#unique_teams[@]} -1 ; m++ ))			#selection sort based on name, if it's a draw
+do
+if [ ${points[m]} -eq ${points[m+1]} ]
+then
+	min=$m
+	for (( n=m+1 ; n<${#unique_teams[@]} ; n++ ))
+	do
+		if [[ "${unique_teams[n]}" < "${unique_teams[min]}" ]]
+		then
+		min=$n
+		fi
+	done	
+	temp_p=${points[min]}
+	points[min]=${points[m]}
+	points[m]=$temp_p
+	temp_gs=${goals_scored[min]}
+	goals_scored[min]=${goals_scored[m]}
+	goals_scored[m]=$temp_gs
+	temp_gr=${goals_received[min]}
+	goals_received[min]=${goals_received[m]}
+	goals_received[m]=$temp_gr
+	temp_t=${unique_teams[min]}
+	unique_teams[min]=${unique_teams[m]}	
+	unique_teams[m]=$temp_t	
+fi
+done
+
+
+
+for (( c=0 ; c<${#unique_teams[@]} ; c++ )) 		#print results
+do
+echo "$(($c+1)).	${unique_teams[c]}	${points[c]}	${goals_scored[c]}-${goals_received[c]}"
+done

@@ -1,0 +1,44 @@
+#!/bin/bash
+
+files=$#
+for files in "$@"
+do
+	file=$files
+	lines=$((wc -l $files) | awk '{print $1}') 		#extract lines from file
+	cur_line=1	#current line inside loop
+	sum_x=0
+	sum_x2=0 #squared
+	sum_y=0
+	sum_xy=0 
+	while [ "$cur_line" -le "$lines" ]       
+	do
+	    X=$(awk 'NR=='$cur_line' { print $1 }' $files | awk -F: '{print $1}') #first print chooses the entire line, second chooses element
+	    sum_x=$(echo "scale=2; $sum_x+$X" | bc)							#sum x
+	    sum_x2=$(echo "scale=2; $sum_x2+$X*$X" | bc)	    					#sum x squared
+	    Y=$(awk 'NR=='$cur_line' { print $1 }' $files | awk -F: '{print $2}') #first print chooses the entire line, second chooses element
+	    sum_y=$(echo "scale=2; $sum_y+$Y" | bc)							#sum y
+	    sum_xy=$(echo "scale=2; $sum_xy+$Y*$X" | bc)					#sum x*y
+	    let cur_line=cur_line+1
+	done
+	
+if  (( $(echo "$sum_x" == 0  |bc -l) )) 
+then					
+	a=0
+else
+	a=$(echo "scale=2; (($lines*$sum_xy)-($sum_x*$sum_y))/(($lines*$sum_x2)-($sum_x*$sum_x))" | bc)
+fi	
+
+b=$(echo "scale=2; (($sum_y-($a*$sum_x))/$lines)" | bc)
+cur_line=1
+err=0
+
+while [ "$cur_line" -le "$lines" ]
+	do
+	    Y=$(awk 'NR=='$cur_line' { print $1 }' $files | awk -F: '{print $2}') #first print chooses the entire line, second chooses element
+	    X=$(awk 'NR=='$cur_line' { print $1 }' $files | awk -F: '{print $1}') #first print chooses the entire line, second chooses element
+	    err=$(echo "scale=2; ($err + (($Y-(($a*$X)+$b))^2))" | bc)
+	    let cur_line=cur_line+1
+	done
+c=1
+echo "FILE: $file, a=$a b=$b c=$c err=$err"
+done
