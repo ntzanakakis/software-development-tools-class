@@ -1,0 +1,19 @@
+
+Program 1: regr
+
+The program implements linear regression. The input is 1 or more files that contain lines with 2 decimals, using colon as delimiter.
+First we store the amount of files that need to be processed. A loop is then made to scan all files. The file is traversed line by line and the sums Χ, Χ2, Υ, και Χ*Υ are computed. All sums needed to compute Α, Β, C, and ERR are found. Α is 0 if every Χ is 0, otherwise its value is calculated using the formula and using the bc command. Β is easily calculated using bc. C is a constant with value of 1. ERR is calculated using a loop because Χ and Y are needed once again.
+
+ 	Room for improvement:
+ The file is being accessed far too many times. One possible change is saving X and Y values in arrays. That way, finding the sums would also be faster and more efficiently.
+
+Program  2: RESULTS
+
+The program takes an input of a file with the results of sports match results. The program calculates the points of each team and sorts the teams based on points. In case of a tie, it sorts alphabetically. The arrays are declared which will allow the data to be stored and files accesses to be reduced. 
+Using a combination of cat, cut and pipe ( | ), the data is extracted from each line.
+First the line is split using “-“ as a delimiter. This results in 3 fields. The first contains the home team, the third contains the score of the away team. The second field contains the name of the away team and the and the score of the of the home team, split using a “-“. Another cut, this time using a colon delimiter is done. This way, all data is split the way it should.
+All teams (with duplicates) are stored in an array and echo is used to get the data of the array tr, so that the data is split using new line. This way, the sort works which finds unique names. Using tr again the data is stored in the array using spaces instead of new lines. 
+Afterwards, a loop traverses the entire file. Inside there is an IF with the 3 results of the match. The winner of each match is found and points are distributed. The rest of the data is also dealt with at this time.
+Finally, there are 2 selection sorts, one based on points and one based on names. The name sort is run only in case of a tie between 2 or more teams. Finally the results are printed line by line using a loop.
+Room for improvement:
+When calculating points, array accesses can be reduced without much effort. Also, selection sort is not the best of fastest but it is easy to implement.
